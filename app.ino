@@ -364,7 +364,7 @@ void setup() {
     }
    
      void finalizar(){
-       Serial.print("  finalizada");
+       //Serial.print("  finalizada");
       reb_finalizada = true;
       //control_parada = true;
       ModbusRTUServer.coilWrite(0,true);
@@ -394,71 +394,49 @@ void setup() {
                  atual_dados_online();
                  set_velocidade(velocidade);
                  passo_m1();
-               // parar();
-               
-                               
+                           
               }
              
               if(direcao_m2_atual){
-                 while((pass_m2_atual < quant_passo_m2_p_esp) && (ModbusRTUServer.coilRead(0) == false)){
+                 while((pass_m2_atual < quant_passo_m2_p_esp) && (pass_m1_atual >= n_passo_volta_m1) && (ModbusRTUServer.coilRead(0) == false)){
                  pass_m2_atual++;
-             // for( ; pass_m2_atual < quant_passo_m2_p_esp ; pass_m2_atual++){
-               //   if(cont_passo_m2_p_c <  quant_passo_m2_p_larg_carretel){
-                    //Serial.print( quant_passo_m2_p_larg_carretel);
-                  
-                  cont_passo_m2_p_c++;
-                  ModbusRTUServer.poll();
-                    atual_dados_online();
+            
+                   ModbusRTUServer.poll();
+                   atual_dados_online();
                    set_velocidade(velocidade);
                    passo_m2(direcao_m2_atual);
-                  //parar();
+                   cont_passo_m2_p_c++;
                  
-                  //delay(1);
-                 // }else{
-                    //cont_passo_m2_p_c = 0;
-                    //direcao_m2_atual = false;
-                   // passo_m2(direcao_m2_atual);
-                   // parar();
-                
-                   
                   }
                    if(!(cont_passo_m2_p_c <  quant_passo_m2_p_larg_carretel)){
                      direcao_m2_atual = false;
                    }
-                      //Serial.print(pass_m2);
-                   // } 
-///*
+                   
               }else{
-                 while((pass_m2_atual < quant_passo_m2_p_esp) && (ModbusRTUServer.coilRead(0) == false)){
+                 while((pass_m2_atual < quant_passo_m2_p_esp) && (pass_m1_atual >= n_passo_volta_m1) && (ModbusRTUServer.coilRead(0) == false)){
                  pass_m2_atual++;
-               //for( ; pass_m2_atual < quant_passo_m2_p_esp ; pass_m2_atual++){
-                //  if(cont_passo_m2_p_c > 0){
-                    //Serial.print( quant_passo_m2_p_larg_carretel);
-                    if(!(cont_passo_m2_p_c < 1)){
-                    cont_passo_m2_p_c--;
-                    }
+                   
                   ModbusRTUServer.poll();
                   atual_dados_online();
                   set_velocidade(velocidade);
                   passo_m2(direcao_m2_atual);
-                 // parar();
-                 
-                  //delay(1);
+                   if(!(cont_passo_m2_p_c < 1)){
+                    cont_passo_m2_p_c--;
+                    }
+               
                   }
                    if(!(cont_passo_m2_p_c > 0)){
                      direcao_m2_atual = true;
                   }
-                      //Serial.print(pass_m2);
+                   
                     
               }
-              //Serial.print(cont_passo_m2_p_c);
-             // */
+            
                  if((pass_m2_atual >= quant_passo_m2_p_esp) && (pass_m1_atual >= n_passo_volta_m1)){
                     pass_m1_atual = 0;
                     pass_m2_atual = 0;
                  }
 
-                 
           }
           if((ModbusRTUServer.coilRead(0) == false)){
           finalizar();
