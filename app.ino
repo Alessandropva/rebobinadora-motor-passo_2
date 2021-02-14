@@ -49,6 +49,7 @@ const uint8_t sensor_ref = 8;
 const uint8_t interrupt = 2;
 //variavel que armazena o valor da velocidade convertida
 unsigned int vel_convert;
+float vel_acel = 0.0;
 //quantidade de passo do motor 2 em funcao da largura do carretel
 unsigned int quant_passo_m2_p_larg_carretel ;
 //quantidade e espira em funcao da largura do carretel
@@ -316,15 +317,15 @@ void setup() {
        memcpy(&contrl_cancel,&reg1,1);
             
        }
-
+           
       void set_velocidade(uint8_t veloc){
           if((veloc > 0) && (veloc < 101)){
-               vel_convert = ( 5 - (veloc * 0.04));
+               vel_convert = ( 4.1 - (veloc * 0.04));
           }else{
               if(veloc > 100){
                 vel_convert = 1;
               }else{
-                 vel_convert = 4.96;
+                 vel_convert = 4;
               }
                
           }
@@ -353,10 +354,19 @@ void setup() {
       //referenciar();
 
  }
+
  void passo_motores(bool dir_m2){
       unsigned long tempo_millis;
        unsigned long tempo_micros;
-       digitalWrite(pin_dir_m1,0);
+        
+        if( vel_acel < (4.1 - vel_convert)){
+            vel_acel += 0.01;
+        }else{
+          if(vel_acel > (4.1 - vel_convert))
+          vel_acel -= 0.01;
+        }
+
+        digitalWrite(pin_dir_m1,0);
        //avanca um passo no motor 1
       digitalWrite(pin_step_m1,HIGH);
       if( set_pass_m2 == true){
@@ -365,14 +375,17 @@ void setup() {
       //avanca um passo no motor 2
       digitalWrite(pin_step_m2,HIGH);
       }
-      delayMicroseconds(500);
-  
+      //delayMicroseconds(500);
+       tempo_micros = micros();
+      while((micros() - tempo_micros) < 300){
+       ModbusRTUServer.poll();
+      }
 
       digitalWrite(pin_step_m1,LOW);
       digitalWrite(pin_step_m2,LOW);
 
-      tempo_millis = millis();
-      while((millis() - tempo_millis) < (vel_convert)){
+      tempo_millis = micros();
+      while((micros() - tempo_millis) < ((4.1 - vel_acel) * 1000)){
        ModbusRTUServer.poll();
        atual_dados_online();
       }
@@ -409,6 +422,7 @@ void setup() {
     void iniciar(){
      atual_dados_online();
      atualizar_dados_rec_usuario();
+     vel_acel = 0;
      if(contrl_cancel == true){
            finalizar();
      }
