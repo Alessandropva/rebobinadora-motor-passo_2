@@ -21,7 +21,7 @@ bool contrl_cancel;
 //indica qual o valor em mm que sera avancado em relacao ao sensor de referencia
 float avanco = 0;
 //seta o valor da velocidade de rotacao dos motores
-uint8_t velocidade ;
+uint8_t velocidade = 1;
 
 //............................variaveis do sistema.......................................................
 
@@ -48,8 +48,8 @@ const uint8_t sensor_ref = 8;
 //pino para interrupcao
 const uint8_t interrupt = 2;
 //variavel que armazena o valor da velocidade convertida
-unsigned int vel_convert;
-float vel_acel = 0.0;
+unsigned int vel_convert = 0;
+unsigned int vel_acel = 0;
 //quantidade de passo do motor 2 em funcao da largura do carretel
 unsigned int quant_passo_m2_p_larg_carretel ;
 //quantidade e espira em funcao da largura do carretel
@@ -79,7 +79,7 @@ const int numDiscreteInputs = 10;
 const int numHoldingRegisters = 10;
 const int numInputRegisters = 10;
 
-#define vel_ref 1
+#define vel_ref 200
 #define avancar  true
 #define voltar  false
 #define iniciado 0x00001
@@ -99,11 +99,12 @@ void iniciar();
 void parar();
 void interrupt_parar();
 void passo_m1();
-void passo_m2(bool dir);
+void passo_m2(bool dir, unsigned int veloc);
 void  referenciar();
 void set_velocidade(uint8_t veloc);
 void atualizar();
 void  atualizar_dados_rec_usuario();
+void inicializar_dados_modbus();
 
 void setup() {
   // put your setup code here, to run once:
@@ -155,6 +156,7 @@ void setup() {
    //setando bit de controle de andamento da rebobinagem em modo parado
    ModbusRTUServer.coilWrite(iniciado,true);
    ModbusRTUServer.holdingRegisterWrite(quant_esp_atual,0);
+   inicializar_dados_modbus();
    //inicializando registro com o valor da seccao do fio
   // ModbusRTUServer.holdingRegisterWrite(0,53477);
   // ModbusRTUServer.holdingRegisterWrite(1,15906);
@@ -175,8 +177,8 @@ void setup() {
      unsigned int temp = 0;
      while(!digitalRead(sensor_ref)){
        //set_velocidade(vel_ref);
-       vel_convert = vel_ref;
-       passo_m2(false);
+       //vel_convert = vel_ref;
+        passo_m2(false, vel_ref);
         
      }
      if(reb_finalizada){
@@ -187,8 +189,8 @@ void setup() {
       }
      for(unsigned int i = 0; i < temp ;i++){
            //set_velocidade(vel_ref);
-           vel_convert = vel_ref;
-           passo_m2(true);
+          // vel_convert = vel_ref;
+           passo_m2(true, vel_ref);
      }
      
    }
@@ -237,7 +239,7 @@ void setup() {
       EEPROM.write(24,temp[3]);
 
       EEPROM.write(25,velocidade);
-      EEPROM.write(26,(velocidade>>8));
+      //EEPROM.write(26,(velocidade>>8));
       
       }
          
@@ -251,7 +253,7 @@ void setup() {
       esp_atual =  (EEPROM.read(5) | (EEPROM.read(6)<<8));
       cont_passo_m2_p_c =  (EEPROM.read(7) | (EEPROM.read(8)<<8));
       quant_esp =  (EEPROM.read(9) | (EEPROM.read(10)<<8));
-      velocidade =  (EEPROM.read(25) | (EEPROM.read(26)<<8));
+      velocidade =  EEPROM.read(25);
 
       temp[0] = EEPROM.read(11);
       temp[1] = EEPROM.read(12);
@@ -274,6 +276,40 @@ void setup() {
       memcpy(&avanco,&temp, 4);
       //avanco = temp2;
      }
+     void inicializar_dados_modbus(){
+       uint8_t temp[4];
+       uint16_t temp_2;
+      ModbusRTUServer.holdingRegisterWrite(esp_quant,  (EEPROM.read(9) | (EEPROM.read(10)<<8)));
+      ModbusRTUServer.holdingRegisterWrite(velocid, EEPROM.read(25));
+
+      temp[0] = EEPROM.read(11);
+      temp[1] = EEPROM.read(12);
+      temp[2] = EEPROM.read(13);
+      temp[3] = EEPROM.read(14);
+      memcpy(&temp_2, &temp[0], 2);
+      ModbusRTUServer.holdingRegisterWrite(fio_diam + 1,temp_2);
+      memcpy(&temp_2, &temp[2], 2);
+      ModbusRTUServer.holdingRegisterWrite(fio_diam, temp_2);
+
+      temp[0] = EEPROM.read(15);
+      temp[1] = EEPROM.read(16);
+      temp[2] = EEPROM.read(17);
+      temp[3] = EEPROM.read(18);
+      memcpy(&temp_2, &temp[0], 2);
+      ModbusRTUServer.holdingRegisterWrite(tam_carr + 1,temp_2);
+      memcpy(&temp_2, &temp[2], 2);
+      ModbusRTUServer.holdingRegisterWrite(tam_carr, temp_2);
+
+      temp[0] = EEPROM.read(21);
+      temp[1] = EEPROM.read(22);
+      temp[2] = EEPROM.read(23);
+      temp[3] = EEPROM.read(24);
+      memcpy(&temp_2, &temp[0], 2);
+      ModbusRTUServer.holdingRegisterWrite(tam_avan + 1,temp_2);
+      memcpy(&temp_2, &temp[2], 2);
+      ModbusRTUServer.holdingRegisterWrite(tam_avan, temp_2);
+        }
+
 
       void atualizar_dados_rec_usuario(){
        uint8_t temp[4] ;
@@ -296,8 +332,7 @@ void setup() {
        memcpy(&temp[0],&reg1,2);
        memcpy(&temp[2],&reg2,2);
        memcpy(&tam_carretel,&temp,4);
-      
-      
+            
       reg1 = ModbusRTUServer.holdingRegisterRead(esp_quant);
       memcpy(&quant_esp,&reg1,2);
       
@@ -320,12 +355,12 @@ void setup() {
            
       void set_velocidade(uint8_t veloc){
           if((veloc > 0) && (veloc < 101)){
-               vel_convert = ( 4.1 - (veloc * 0.04));
+               vel_convert = ( 4200 - (veloc * 40));
           }else{
               if(veloc > 100){
-                vel_convert = 1;
+                vel_convert = 200;
               }else{
-                 vel_convert = 4;
+                 vel_convert = 4160;
               }
                
           }
@@ -356,17 +391,17 @@ void setup() {
  }
 
  void passo_motores(bool dir_m2){
-      unsigned long tempo_millis;
+      //unsigned long tempo_millis;
        unsigned long tempo_micros;
         
-        if( vel_acel < (4.1 - vel_convert)){
-            vel_acel += 0.01;
+        if( vel_acel >  vel_convert){
+            vel_acel -= 8;
         }else{
-          if(vel_acel > (4.1 - vel_convert))
-          vel_acel -= 0.01;
+          if(vel_acel < vel_convert)
+          vel_acel += 8;
         }
 
-        digitalWrite(pin_dir_m1,0);
+      digitalWrite(pin_dir_m1,0);
        //avanca um passo no motor 1
       digitalWrite(pin_step_m1,HIGH);
       if( set_pass_m2 == true){
@@ -376,16 +411,16 @@ void setup() {
       digitalWrite(pin_step_m2,HIGH);
       }
       //delayMicroseconds(500);
-       tempo_micros = micros();
-      while((micros() - tempo_micros) < 300){
+      tempo_micros = micros();
+      while((micros() - tempo_micros) < 100){
        ModbusRTUServer.poll();
       }
 
       digitalWrite(pin_step_m1,LOW);
       digitalWrite(pin_step_m2,LOW);
 
-      tempo_millis = micros();
-      while((micros() - tempo_millis) < ((4.1 - vel_acel) * 1000)){
+      tempo_micros = micros();
+      while((micros() - tempo_micros) <  vel_acel){
        ModbusRTUServer.poll();
        atual_dados_online();
       }
@@ -407,22 +442,23 @@ void setup() {
  }
 
 
- void passo_m2(bool dir){
+ void passo_m2(bool dir, unsigned int veloc){
       //seleciona a direcao
       digitalWrite(pin_dir_m2,dir);
       //avanca um passo no motor 2
       digitalWrite(pin_step_m2,HIGH);
-      delayMicroseconds(50);
+      delayMicroseconds(300);
       digitalWrite(pin_step_m2,LOW);
-      delay(vel_convert);
+      delayMicroseconds(veloc);
+      //delay(vel_convert);
      // cont_passo_m2_p_c++;
      // Serial.print( cont_passo_m2_p_c);
       
  }
     void iniciar(){
      atual_dados_online();
-     atualizar_dados_rec_usuario();
-     vel_acel = 0;
+     //atualizar_dados_rec_usuario();
+     vel_acel = 4160;
      if(contrl_cancel == true){
            finalizar();
      }
@@ -431,7 +467,7 @@ void setup() {
        //verifica se tem rebobinagem nao concluida 
        if(EEPROM.read(20)){
          referenciar();
-        // atualizar_dados_rec_usuario();
+         atualizar_dados_rec_usuario();
          salvar();
          configuracao();
          
