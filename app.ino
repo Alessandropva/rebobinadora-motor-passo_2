@@ -35,18 +35,7 @@ const unsigned int n_passo_volta_m2 = 400;
 const float resolucao_passo_m2 = 0.0031; //passo_fuso / n_passo_volta_m2;
 //quantidade de passo que o motor 1 precisa dar para cada passo do motor 2
 unsigned int quant_passo_m1_p_passo_m2;
-//pino para controle do passo motor 1
-const uint8_t pin_step_m1 = 11; 
-//pino para controle da direcao motor 1
-const uint8_t pin_dir_m1 = 12;
-//pino para controle do passo motor 2
-const uint8_t pin_step_m2 = 5;
-//pino para controle da direcao motor 2
-const uint8_t pin_dir_m2 = 6;
-//pino para leitura do sensor de referencia
-const uint8_t sensor_ref = 8;
-//pino para interrupcao
-const uint8_t interrupt = 2;
+
 //variavel que armazena o valor da velocidade convertida
 unsigned int vel_convert = 0;
 unsigned int vel_acel = 0;
@@ -78,6 +67,19 @@ const int numCoils = 10;
 const int numDiscreteInputs = 10;
 const int numHoldingRegisters = 10;
 const int numInputRegisters = 10;
+ 
+//pino para controle do passo motor 1
+#define  pin_step_m1 11
+//pino para controle da direcao motor 1
+#define  pin_dir_m1  12
+//pino para controle do passo motor 2
+#define  pin_step_m2  5
+//pino para controle da direcao motor 2
+#define  pin_dir_m2  6
+//pino para leitura do sensor de referencia
+#define  sensor_ref  8
+//pino para interrupcao
+#define  interrupt  2
 
 #define vel_ref 200
 #define avancar  true
@@ -110,7 +112,7 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(pin_dir_m1,OUTPUT);
   pinMode(pin_dir_m2,OUTPUT);
-  pinMode(pin_step_m1,OUTPUT);
+  pinMode(pin_step_m1,OUTPUT); 
   pinMode(pin_step_m2,OUTPUT);
   pinMode(interrupt,INPUT_PULLUP);
   pinMode(sensor_ref,INPUT_PULLUP);
@@ -169,12 +171,14 @@ void setup() {
     //ModbusRTUServer.coilWrite(2,false);
 
      //atualizar_dados_rec_usuario();
-     // referenciar();
+       //atualizar();
+      //referenciar();
 
 } 
     
    void referenciar(){
      unsigned int temp = 0;
+     //atualizar_dados_rec_usuario();
      while(!digitalRead(sensor_ref)){
        //set_velocidade(vel_ref);
        //vel_convert = vel_ref;
@@ -443,13 +447,22 @@ void setup() {
 
 
  void passo_m2(bool dir, unsigned int veloc){
+      unsigned long tempo_micros = 0;
       //seleciona a direcao
       digitalWrite(pin_dir_m2,dir);
       //avanca um passo no motor 2
       digitalWrite(pin_step_m2,HIGH);
-      delayMicroseconds(300);
+      tempo_micros = micros();
+      while((micros() - tempo_micros) < 300){
+      ModbusRTUServer.poll();
+      }
+      //delayMicroseconds(300);
       digitalWrite(pin_step_m2,LOW);
-      delayMicroseconds(veloc);
+      tempo_micros = micros();
+      while((micros() - tempo_micros) <  veloc){
+      ModbusRTUServer.poll();
+       }
+      //delayMicroseconds(veloc);
       //delay(vel_convert);
      // cont_passo_m2_p_c++;
      // Serial.print( cont_passo_m2_p_c);
@@ -457,7 +470,7 @@ void setup() {
  }
     void iniciar(){
      atual_dados_online();
-     //atualizar_dados_rec_usuario();
+     atualizar_dados_rec_usuario();
      vel_acel = 4160;
      if(contrl_cancel == true){
            finalizar();
@@ -466,10 +479,12 @@ void setup() {
      if(!contrl_parada){
        //verifica se tem rebobinagem nao concluida 
        if(EEPROM.read(20)){
-         referenciar();
          atualizar_dados_rec_usuario();
+         //atualizar();
          salvar();
          configuracao();
+         referenciar();
+        
          
        }else{
         atualizar();
