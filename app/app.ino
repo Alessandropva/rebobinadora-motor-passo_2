@@ -162,29 +162,14 @@ void setup() {
    ModbusRTUServer.coilWrite(iniciado,true);
    ModbusRTUServer.holdingRegisterWrite(quant_esp_atual,0);
    inicializar_dados_modbus();
-   //inicializando registro com o valor da seccao do fio
-  // ModbusRTUServer.holdingRegisterWrite(0,53477);
-  // ModbusRTUServer.holdingRegisterWrite(1,15906);
   
-   //setando quantidade de espira
-  // ModbusRTUServer.holdingRegisterWrite(6,40);
-   //setando velocidade
-   //ModbusRTUServer.holdingRegisterWrite(7,20);
-   //setando bit de controle da seccao ou diametro 
-    //ModbusRTUServer.coilWrite(2,false);
-
-     //atualizar_dados_rec_usuario();
-       //atualizar();
-      //referenciar();
-
 } 
     
    void referenciar(){
      unsigned int temp = 0;
      //atualizar_dados_rec_usuario();
      while(!digitalRead(sensor_ref)){
-       //set_velocidade(vel_ref);
-       //vel_convert = vel_ref;
+      
         passo_m2(false, vel_ref);
         
      }
@@ -195,8 +180,7 @@ void setup() {
         temp = (unsigned int)(avanco/resolucao_passo_m2) + cont_passo_m2_p_c ;
       }
      for(unsigned int i = 0; i < temp ;i++){
-           //set_velocidade(vel_ref);
-          // vel_convert = vel_ref;
+           
            passo_m2(true, vel_ref);
      }
      
@@ -376,14 +360,7 @@ void setup() {
 
   void configuracao(){
      float diametro_fio;
-   //diametro do fio usado para rebobinar
-  /*
-  if(control_s_d){
-    diametro_fio = 2 * sqrt(fio_sec_diam/PI);
-  }else{
-    diametro_fio = fio_sec_diam;
-  }
-  */
+  
   diametro_fio = fio_sec_diam; 
   quant_espira_p_larg_carretel = (tam_carretel / diametro_fio);
   quant_passo_m2_p_esp = (diametro_fio / resolucao_passo_m2); //50
@@ -414,10 +391,7 @@ void setup() {
       //avanca um passo no motor 2
       digitalWrite(pin_step_m2,HIGH);
       }
-      //delayMicroseconds(500);
-     // tempo_micros = micros();
-     // while((micros() - tempo_micros) < 100){
-      //ModbusRTUServer.poll();
+     
        Timer1.initialize(100);
        controle_temp = true;
       }else{
@@ -431,21 +405,12 @@ void setup() {
 
       digitalWrite(pin_step_m1,LOW);
       digitalWrite(pin_step_m2,LOW);
-       //}
-
-     // tempo_micros = micros();
-      //while((micros() - tempo_micros) <  vel_acel){
-       //ModbusRTUServer.poll();
-       //atual_dados_online();
+     
        Timer1.initialize(vel_acel);
        set_pass_m2 = false;
        controle_temp = false;
       }
-      //Timer1.attachInterrupt(rebobinar);
-       //delay(vel_convert);
-      
-      //digitalWrite(pin_step_m1,!digitalRead(pin_step_m1));
-      //cont_passo_m1++;
+    
  }
 
  void passo_m1(){
@@ -455,8 +420,7 @@ void setup() {
       delayMicroseconds(500);
       digitalWrite(pin_step_m1,LOW);
       delay(vel_convert);
-      //digitalWrite(pin_step_m1,!digitalRead(pin_step_m1));
-      //cont_passo_m1++;
+     
  }
 
 
@@ -476,11 +440,7 @@ void setup() {
       while((micros() - tempo_micros) <  veloc){
       ModbusRTUServer.poll();
        }
-      //delayMicroseconds(veloc);
-      //delay(vel_convert);
-     // cont_passo_m2_p_c++;
-     // Serial.print( cont_passo_m2_p_c);
-      
+     
  }
     void iniciar(){
      atual_dados_online();
@@ -543,55 +503,34 @@ void setup() {
            //for( ; esp_atual < quant_esp ; esp_atual++){
              if(!controle_temp){
               if((esp_atual < quant_esp) && (contrl_parada == false) && (contrl_cancel == false)){
-               //atual_dados_online();    
-                      
-               //Serial.print(((quant_esp * n_passo_volta_m1)/quant_passo_m1_p_passo_m2));
+              
                if((pass_m1_atual < n_passo_volta_m1) ){
-               //atual_dados_online();
+              
                if((pass_m2_atual < quant_passo_m1_p_passo_m2)){
-               //atual_dados_online();
+              
                pass_m2_atual ++;  
                pass_m1_atual++; 
-              //for( ; pass_m1_atual < n_passo_volta_m1; pass_m1_atual++){
-                
-                //ModbusRTUServer.poll();
-                //atual_dados_online();
+             
                set_velocidade(velocidade);
                // passo_m1();
                passo_motores(direcao_m2_atual);
                 
                            
               }else{
-              // if(pass_m2_atual  >= quant_passo_m1_p_passo_m2){
-                    pass_m2_atual  = 0;
-                 //} 
+                pass_m2_atual  = 0;
+                       
                 set_pass_m2 = true;
-            // if(ModbusRTUServer.coilRead(0) == true){
+           
               if(direcao_m2_atual){
-                // while((pass_m2_atual < quant_passo_m2_p_esp) && (pass_m1_atual >= n_passo_volta_m1) && (ModbusRTUServer.coilRead(0) == false)){
-                 //pass_m2_atual++;
-            
-                  // ModbusRTUServer.poll();
-                  // atual_dados_online();
-                  // set_velocidade(velocidade);
-                   //passo_m2( direcao_m2_atual);
+               
                    cont_passo_m2_p_c++;
-                  
-                 
-                 // }
+               
                    if((cont_passo_m2_p_c >=  quant_passo_m2_p_larg_carretel)){
                      direcao_m2_atual = false;
                    }
                    
               }else{
-                 //while((pass_m2_atual < quant_passo_m2_p_esp) && (pass_m1_atual >= n_passo_volta_m1) && (ModbusRTUServer.coilRead(0) == false)){
-                 //pass_m2_atual++;
-                   
-                  //ModbusRTUServer.poll();
-                  //atual_dados_online();
-                  //set_velocidade(velocidade);
-                  //passo_m2( direcao_m2_atual);
-
+                
                    if(cont_passo_m2_p_c > 0){
                     cont_passo_m2_p_c--;
                                  
@@ -599,7 +538,6 @@ void setup() {
                      direcao_m2_atual = true;
                   }
 
-              
               }
              }
 
@@ -612,12 +550,7 @@ void setup() {
                     ModbusRTUServer.holdingRegisterWrite(quant_esp_atual, esp_atual);  
                 // }
           }
-
-                  //final do if de controle
-             // }
-              
-              //*/
-             
+            
               }else{
                 Timer1.detachInterrupt();
                 if((contrl_parada == false) || (contrl_cancel == true)){
@@ -636,52 +569,9 @@ void setup() {
        
 // unsigned int teste  = 10;
 void loop() {
-  // salvar();
-   //atualizar();
- //set_velocidade(19);
   
   ModbusRTUServer.poll();
-  
-  // map the coil values to the discrete input values
-
-      //ModbusRTUServer.holdingRegisterWrite(40008,2);
-      //ModbusRTUServer.coilWrite(00001,0);
-
-   //control_parada = 1;
-   //salvar();
-   //configuracao();
-   /* 
-    *  s
-     Serial.print(quant_passo_m1_p_passo_m2);
-     Serial.print("   ");
-     Serial.print(fio_sec_diam);
-      Serial.print("   ");
-     Serial.print(diametro_fio);
-      */
-     /*
-     unsigned int temp3;
-     float temp = 33.9;
-     uint8_t temp2[4];
-     memcpy(&temp2,&temp, 4);
-     memcpy(&temp3,&temp2[0],2);
-     ModbusRTUServer.holdingRegisterWrite((fio_diam + 1) ,temp3);
-     memcpy(&temp3,&temp2[2],2);
-     ModbusRTUServer.holdingRegisterWrite(fio_diam ,temp3);
-       
-       */
-     
-     // ModbusRTUServer.holdingRegisterWrite(fio_diam, 33);  
-      //atual_dados_online();
+   
    iniciar();
-   // if(tam_carretel == 20.4){
-   // rebobinar();
-   //}
-    //Serial.print(ModbusRTUServer.holdingRegisterRead(tam_carr));
-   //rebobinar();
-     // Serial.print(quant_passo_m1_p_passo_m2);
-   //rebobinar();
-   //delay(1000);
-
-   //passo_m1();
-    
+  
 }
